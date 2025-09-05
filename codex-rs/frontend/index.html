@@ -1,23 +1,11 @@
 <!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>Codex Frontend</title>
-</head>
-<body>
-  <h1>Codex Frontend</h1>
-  <section id="settings"></section>
-  <input id="prompt" type="text" placeholder="Enter prompt" />
-  <button id="send">Send</button>
-  <pre id="response"></pre>
-  <div>
-    <input id="search" type="text" placeholder="Search files" />
-    <ul id="files"></ul>
-  </div>
-  <div>
-    <textarea id="patch" placeholder="Patch text"></textarea>
-    <button id="apply">Apply Patch</button>
-  </div>
-  <script type="module" src="main.js"></script>
-</body>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Codex Frontend</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./ui/main.jsx"></script>
+  </body>
 </html>
