@@ -1,6 +1,16 @@
 import { invoke } from "@tauri-apps/api/tauri";
+import { readTextFile } from "@tauri-apps/api/fs";
+import { EditorView, basicSetup } from "codemirror";
+import { createTwoFilesPatch } from "diff";
 
 let conversationId = null;
+let currentFile = null;
+let originalContent = "";
+const view = new EditorView({
+  doc: "",
+  extensions: [basicSetup],
+  parent: document.getElementById("editor"),
+});
 
 async function ensureConversation() {
   if (!conversationId) {
@@ -22,18 +32,41 @@ document.getElementById("search").addEventListener("input", async (e) => {
   resp.paths.forEach((p) => {
     const li = document.createElement("li");
     li.textContent = p;
+    li.addEventListener("click", async () => {
+      const content = await readTextFile(p);
+      currentFile = p;
+      originalContent = content;
+      view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: content },
+      });
+    });
     list.appendChild(li);
   });
 });
 
 document.getElementById("apply").addEventListener("click", async () => {
-  const patch = document.getElementById("patch").value;
-  await invoke("apply_patch_command", { patch });
+  if (!currentFile) return;
+  const newContent = view.state.doc.toString();
+  const patch = createTwoFilesPatch(
+    currentFile,
+    currentFile,
+    originalContent,
+    newContent,
+  );
+  document.getElementById("patch-preview").textContent = patch;
+  if (confirm("Apply this patch?")) {
+    await invoke("apply_patch_command", { patch });
+    originalContent = newContent;
+  }
 });
 
 async function loadSettings() {
   const settings = await invoke("load_settings");
-  document.getElementById("settings").textContent = JSON.stringify(settings, null, 2);
+  document.getElementById("settings").textContent = JSON.stringify(
+    settings,
+    null,
+    2,
+  );
 }
 
 loadSettings();
