@@ -8,14 +8,18 @@ use std::sync::atomic::AtomicBool;
 use codex_core::auth::AuthManager;
 use codex_core::config::Config;
 use codex_core::config::ConfigOverrides;
+use codex_core::config::find_codex_home;
+use codex_core::config::load_config_as_toml;
 use codex_core::conversation_manager::ConversationManager;
 use codex_core::conversation_manager::NewConversation;
 use codex_file_search::run as search_run;
 use codex_protocol::mcp_protocol::AuthMode;
 use codex_protocol::protocol::InputItem;
 use codex_protocol::protocol::Op;
+use serde::Deserialize;
 use serde::Serialize;
 use tauri::State;
+use toml::Value as TomlValue;
 use uuid::Uuid;
 
 #[derive(Default)]
@@ -113,6 +117,35 @@ fn load_settings() -> Result<Config, String> {
     Config::load_with_cli_overrides(vec![], default_overrides()).map_err(|e| e.to_string())
 }
 
+#[derive(Deserialize)]
+struct FrontendSettings {
+    model: Option<String>,
+    disable_response_storage: Option<bool>,
+    hide_agent_reasoning: Option<bool>,
+}
+
+#[tauri::command]
+fn save_settings(settings: FrontendSettings) -> Result<(), String> {
+    let codex_home = find_codex_home().map_err(|e| e.to_string())?;
+    let mut root = load_config_as_toml(&codex_home).map_err(|e| e.to_string())?;
+
+    if let Some(model) = settings.model {
+        root["model"] = TomlValue::String(model);
+    }
+    if let Some(disable) = settings.disable_response_storage {
+        root["disable_response_storage"] = TomlValue::Boolean(disable);
+    }
+    if let Some(hide) = settings.hide_agent_reasoning {
+        root["hide_agent_reasoning"] = TomlValue::Boolean(hide);
+    }
+
+    std::fs::create_dir_all(&codex_home).map_err(|e| e.to_string())?;
+    let config_path = codex_home.join("config.toml");
+    let toml_str = toml::to_string_pretty(&root).map_err(|e| e.to_string())?;
+    std::fs::write(config_path, toml_str).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 fn main() {
     let auth = AuthManager::new(std::env::temp_dir(), AuthMode::ApiKey, "frontend".into());
     tauri::Builder::default()
@@ -124,7 +157,8 @@ fn main() {
             send_message,
             apply_patch_command,
             search_files,
-            load_settings
+            load_settings,
+            save_settings
         ])
         .run(tauri::generate_context!())
         .expect("error while running Codex frontend");

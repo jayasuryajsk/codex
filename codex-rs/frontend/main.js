@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/tauri";
+import { SettingsPanel } from "./settings_panel.js";
 
 let conversationId = null;
 
@@ -31,9 +32,9 @@ document.getElementById("apply").addEventListener("click", async () => {
   await invoke("apply_patch_command", { patch });
 });
 
-async function loadSettings() {
-  const settings = await invoke("load_settings");
-  document.getElementById("settings").textContent = JSON.stringify(settings, null, 2);
-}
-
-loadSettings();
+const settingsPanel = new SettingsPanel(
+  document.getElementById("settings-panel")
+);
+document
+  .getElementById("open-settings")
+  .addEventListener("click", () => settingsPanel.open());
