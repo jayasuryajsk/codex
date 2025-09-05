@@ -3,20 +3,68 @@
 <head>
   <meta charset="utf-8" />
   <title>Codex Frontend</title>
+  <style>
+    html, body { height: 100%; margin: 0; }
+    #layout {
+      display: grid;
+      grid-template-columns: 250px 1fr 300px;
+      height: 100%;
+    }
+    #layout.collapsed-explorer {
+      grid-template-columns: 0 1fr 300px;
+    }
+    #layout.overlay-chat {
+      grid-template-columns: 250px 1fr;
+    }
+    #file-explorer {
+      border-right: 1px solid #ccc;
+      overflow-y: auto;
+    }
+    #file-explorer.collapsed { display: none; }
+    #editor-view { position: relative; }
+    #chat-panel {
+      border-left: 1px solid #ccc;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    #chat-panel.overlay {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 300px;
+      background: white;
+      z-index: 10;
+    }
+    #chat-panel .messages { flex: 1; overflow-y: auto; }
+    textarea.editor {
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+    }
+  </style>
 </head>
 <body>
-  <h1>Codex Frontend</h1>
-  <section id="settings"></section>
-  <input id="prompt" type="text" placeholder="Enter prompt" />
-  <button id="send">Send</button>
-  <pre id="response"></pre>
-  <div>
-    <input id="search" type="text" placeholder="Search files" />
-    <ul id="files"></ul>
-  </div>
-  <div>
-    <textarea id="patch" placeholder="Patch text"></textarea>
-    <button id="apply">Apply Patch</button>
+  <button id="toggle-explorer">Toggle Explorer</button>
+  <div id="layout">
+    <div id="file-explorer">
+      <div>
+        <input type="text" class="search" placeholder="Search files" />
+      </div>
+      <ul class="files"></ul>
+    </div>
+    <div id="editor-view">
+      <textarea class="editor"></textarea>
+    </div>
+    <div id="chat-panel">
+      <div>
+        <button class="mode">Overlay</button>
+      </div>
+      <div class="messages"></div>
+      <input type="text" class="prompt" placeholder="Enter message" />
+      <button class="send">Send</button>
+    </div>
   </div>
   <script type="module" src="main.js"></script>
 </body>
