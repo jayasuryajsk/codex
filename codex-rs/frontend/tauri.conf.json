@@ -1,0 +1,20 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/v1/tools/cli/schema.json",
+  "package": {
+    "productName": "codex-frontend",
+    "version": "0.0.0"
+  },
+  "build": {
+    "distDir": "./",
+    "devPath": "./"
+  },
+  "tauri": {
+    "windows": [
+      {
+        "title": "Codex Frontend",
+        "width": 800,
+        "height": 600
+      }
+    ]
+  }
+}
