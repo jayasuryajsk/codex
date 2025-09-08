@@ -1,12 +1,13 @@
 import { invoke } from "@tauri-apps/api/tauri";
 import { listen } from "@tauri-apps/api/event";
-import { readTextFile, writeFile, createDir } from "@tauri-apps/api/fs";
+import { readTextFile } from "@tauri-apps/api/fs";
+import { workspace } from "../state/workspace.ts";
 
 export class ChatPanel {
   constructor(container, root = ".") {
     this.container = container;
     this.root = root;
-    this.messages = [];
+    this.messages = workspace.chatLogs;
     this.selectedFile = null;
 
     this.container.innerHTML = `
@@ -30,7 +31,9 @@ export class ChatPanel {
       this.selectedFile = e.detail.path;
     });
 
-    this.loadHistory();
+    for (const m of this.messages) {
+      this.renderMessage(m.role, m.content);
+    }
   }
 
   renderMessage(role, text) {
@@ -40,26 +43,6 @@ export class ChatPanel {
     this.list.appendChild(div);
     this.list.scrollTop = this.list.scrollHeight;
     return div;
-  }
-
-  async loadHistory() {
-    try {
-      const text = await readTextFile(`${this.root}/.codex/history.json`);
-      this.messages = JSON.parse(text);
-      for (const m of this.messages) {
-        this.renderMessage(m.role, m.content);
-      }
-    } catch (_) {
-      this.messages = [];
-    }
-  }
-
-  async saveHistory() {
-    await createDir(`${this.root}/.codex`, { recursive: true });
-    await writeFile({
-      path: `${this.root}/.codex/history.json`,
-      contents: JSON.stringify(this.messages),
-    });
   }
 
   async insertFile() {
@@ -88,6 +71,5 @@ export class ChatPanel {
 
     await invoke("run_codex", { input: text });
     unlisten();
-    await this.saveHistory();
   }
 }
