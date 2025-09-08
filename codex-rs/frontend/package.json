@@ -5,7 +5,8 @@
     "@tauri-apps/api": "^1.5.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-diff-view": "^3.2.2"
+    "react-diff-view": "^3.2.2",
+    "fuse.js": "^7.0.0"
   },
   "scripts": {
     "dev": "cargo tauri dev"
