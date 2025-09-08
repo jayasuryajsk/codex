@@ -32,14 +32,13 @@ export class SettingsPanel {
   async save() {
     const model = this.container.querySelector("#model").value;
     const disable_response_storage = this.container.querySelector(
-      "#disable_response_storage"
+      "#disable_response_storage",
     ).checked;
     const hide_agent_reasoning = this.container.querySelector(
-      "#hide_agent_reasoning"
+      "#hide_agent_reasoning",
     ).checked;
     await invoke("save_settings", {
       settings: { model, disable_response_storage, hide_agent_reasoning },
     });
   }
 }
-
