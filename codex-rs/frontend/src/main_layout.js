@@ -1,3 +1,5 @@
+import { workspace } from "./state/workspace.ts";
+
 export class MainLayout {
   constructor() {
     this.layout = document.getElementById("layout");
@@ -8,7 +10,7 @@ export class MainLayout {
     this.sidebarVisible = JSON.parse(
       localStorage.getItem("sidebarVisible") || "true"
     );
-    this.sidebarWidth = localStorage.getItem("sidebarWidth") || "250px";
+    this.sidebarWidth = workspace.sidebarWidth || "250px";
 
     this.applyState();
 
@@ -44,6 +46,6 @@ export class MainLayout {
     const width = `${this.sidebar.offsetWidth}px`;
     this.sidebarWidth = width;
     this.layout.style.gridTemplateColumns = `${width} 1fr`;
-    localStorage.setItem("sidebarWidth", width);
+    workspace.sidebarWidth = width;
   }
 }
