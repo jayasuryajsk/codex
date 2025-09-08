@@ -24,7 +24,22 @@
       overflow: auto;
     }
     #chat {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #chat .messages {
+      flex: 1;
       overflow: auto;
+      padding: 8px;
+    }
+    #chat .input-row {
+      display: flex;
+      gap: 4px;
+      padding: 8px;
+    }
+    #chat .input-row input {
+      flex: 1;
     }
     .selected {
       background: #ddd;
@@ -43,11 +58,7 @@
         <textarea id="patch" placeholder="Patch text"></textarea>
         <button id="apply">Apply Patch</button>
       </div>
-      <div id="chat">
-        <input id="prompt" type="text" placeholder="Enter prompt" />
-        <button id="send">Send</button>
-        <pre id="response"></pre>
-      </div>
+      <div id="chat"></div>
     </div>
     <div id="settings-panel" style="display:none"></div>
   </div>
