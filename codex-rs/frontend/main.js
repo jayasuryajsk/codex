@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/tauri";
-import { SettingsPanel } from "./settings_panel.js";
+import { SettingsPanel } from "./src/components/SettingsPanel.js";
 import { MainLayout } from "./src/main_layout.js";
 import { FileTree } from "./src/components/FileTree.js";
 import { ChatPanel } from "./src/components/ChatPanel.js";
