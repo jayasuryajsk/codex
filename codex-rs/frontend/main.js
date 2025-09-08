@@ -1,9 +1,9 @@
 import { invoke } from "@tauri-apps/api/tauri";
-import { SettingsPanel } from "./src/components/SettingsPanel.js";
+import { SettingsDialog } from "./src/components/SettingsDialog.tsx";
 import { MainLayout } from "./src/main_layout.js";
 import { FileTree } from "./src/components/FileTree.js";
 import { ChatPanel } from "./src/components/ChatPanel.tsx";
-import { AuthModal } from "./src/components/AuthModal.js";
+import { AuthDialog } from "./src/components/AuthDialog.tsx";
 import { CommandPalette } from "./src/components/CommandPalette.tsx";
 import { writeFile } from "@tauri-apps/api/fs";
 import { TerminalPanel } from "./src/components/TerminalPanel.tsx";
@@ -36,20 +36,22 @@ const saveOnExit = () => {
 };
 window.addEventListener("beforeunload", saveOnExit);
 
-const authModal = new AuthModal();
-authModal.open();
+const authDialog = new AuthDialog();
+authDialog.open();
 
 document.getElementById("apply").addEventListener("click", async () => {
   const patch = document.getElementById("patch").value;
   await invoke("apply_patch_command", { patch });
 });
 
-const settingsPanel = new SettingsPanel(
-  document.getElementById("settings-panel"),
-);
+const settingsDialog = new SettingsDialog();
 document
   .getElementById("open-settings")
-  .addEventListener("click", () => settingsPanel.open());
+  ?.addEventListener("click", () => settingsDialog.open());
+
+document
+  .getElementById("open-auth")
+  ?.addEventListener("click", () => authDialog.open());
 
 document
   .getElementById("reset-workspace")

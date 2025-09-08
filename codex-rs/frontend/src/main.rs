@@ -248,6 +248,7 @@ struct FrontendSettings {
     model: Option<String>,
     disable_response_storage: Option<bool>,
     hide_agent_reasoning: Option<bool>,
+    model_max_output_tokens: Option<u64>,
 }
 
 #[tauri::command]
@@ -263,6 +264,9 @@ fn save_settings(settings: FrontendSettings) -> Result<(), String> {
     }
     if let Some(hide) = settings.hide_agent_reasoning {
         root["hide_agent_reasoning"] = TomlValue::Boolean(hide);
+    }
+    if let Some(tokens) = settings.model_max_output_tokens {
+        root["model_max_output_tokens"] = TomlValue::Integer(tokens as i64);
     }
 
     std::fs::create_dir_all(&codex_home).map_err(|e| e.to_string())?;
