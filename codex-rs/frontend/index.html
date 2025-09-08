@@ -26,6 +26,9 @@
     #chat {
       overflow: auto;
     }
+    .selected {
+      background: #ddd;
+    }
   </style>
 </head>
 <body>
@@ -36,8 +39,7 @@
     </div>
     <div id="layout">
       <div id="sidebar">
-        <input id="search" type="text" placeholder="Search files" />
-        <ul id="files"></ul>
+        <div id="file-tree"></div>
         <textarea id="patch" placeholder="Patch text"></textarea>
         <button id="apply">Apply Patch</button>
       </div>

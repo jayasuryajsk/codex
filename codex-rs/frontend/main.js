@@ -1,8 +1,11 @@
 import { invoke } from "@tauri-apps/api/tauri";
 import { SettingsPanel } from "./settings_panel.js";
 import { MainLayout } from "./src/main_layout.js";
+import { FileTree } from "./src/components/FileTree.js";
 
 new MainLayout();
+
+const fileTree = new FileTree(document.getElementById("file-tree"));
 
 let conversationId = null;
 
@@ -18,16 +21,8 @@ document.getElementById("send").addEventListener("click", async () => {
   await invoke("send_message", { id: conversationId, message: prompt });
 });
 
-document.getElementById("search").addEventListener("input", async (e) => {
-  const query = e.target.value;
-  const resp = await invoke("search_files", { query, dir: "." });
-  const list = document.getElementById("files");
-  list.innerHTML = "";
-  resp.paths.forEach((p) => {
-    const li = document.createElement("li");
-    li.textContent = p;
-    list.appendChild(li);
-  });
+window.addEventListener("file-open", (e) => {
+  document.getElementById("response").textContent = e.detail.content;
 });
 
 document.getElementById("apply").addEventListener("click", async () => {
