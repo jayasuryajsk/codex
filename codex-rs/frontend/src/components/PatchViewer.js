@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/tauri";
 import { parseDiff, Diff, Hunk } from "react-diff-view";
 import "react-diff-view/style/index.css";
 
-export function PatchViewer({ patch, onDiscard }) {
+export function PatchViewer({ patch, onApply, onReject }) {
   const files = parseDiff(patch || "");
   const [checked, setChecked] = useState([]);
 
@@ -39,7 +39,7 @@ export function PatchViewer({ patch, onDiscard }) {
     const selectedPatch = buildPatch();
     try {
       await invoke("apply_patch_command", { patch: selectedPatch });
-      alert("Patch applied successfully");
+      await onApply?.(selectedPatch);
     } catch (e) {
       alert(`Failed to apply patch: ${e}`);
     }
@@ -73,7 +73,7 @@ export function PatchViewer({ patch, onDiscard }) {
       ))}
       <div>
         <button onClick={apply}>Apply</button>
-        <button onClick={onDiscard}>Discard</button>
+        <button onClick={onReject}>Reject</button>
       </div>
     </div>
   );

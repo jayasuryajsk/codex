@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/tauri";
 import { SettingsPanel } from "./src/components/SettingsPanel.js";
 import { MainLayout } from "./src/main_layout.js";
 import { FileTree } from "./src/components/FileTree.js";
-import { ChatPanel } from "./src/components/ChatPanel.js";
+import { ChatPanel } from "./src/components/ChatPanel.tsx";
 import { AuthModal } from "./src/components/AuthModal.js";
 import { CommandPalette } from "./src/components/CommandPalette.tsx";
 import { writeFile } from "@tauri-apps/api/fs";
