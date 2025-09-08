@@ -12,6 +12,7 @@ use codex_core::config::find_codex_home;
 use codex_core::config::load_config_as_toml;
 use codex_core::conversation_manager::ConversationManager;
 use codex_core::conversation_manager::NewConversation;
+use codex_core::protocol::{AgentMessageDeltaEvent, AgentMessageEvent, EventMsg};
 use codex_file_search::run as search_run;
 use codex_protocol::mcp_protocol::AuthMode;
 use codex_protocol::protocol::InputItem;
@@ -78,6 +79,51 @@ async fn send_message(
         })
         .await
         .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+async fn run_codex(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    input: String,
+    context: Option<String>,
+) -> Result<(), String> {
+    let config =
+        Config::load_with_cli_overrides(vec![], default_overrides()).map_err(|e| e.to_string())?;
+    let NewConversation { conversation, .. } = state
+        .mgr
+        .new_conversation(config)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let mut text = input;
+    if let Some(ctx) = context {
+        if !ctx.is_empty() {
+            text = format!("{ctx}\n{text}");
+        }
+    }
+
+    conversation
+        .submit(Op::UserInput {
+            items: vec![InputItem::Text { text }],
+        })
+        .await
+        .map_err(|e| e.to_string())?;
+
+    loop {
+        let event = conversation.next_event().await.map_err(|e| e.to_string())?;
+        match event.msg {
+            EventMsg::AgentMessageDelta(AgentMessageDeltaEvent { delta }) => {
+                window.emit("codex", delta).map_err(|e| e.to_string())?;
+            }
+            EventMsg::AgentMessage(AgentMessageEvent { message }) => {
+                window.emit("codex", message).map_err(|e| e.to_string())?;
+            }
+            EventMsg::TaskComplete(_) => break,
+            _ => {}
+        }
+    }
     Ok(())
 }
 
@@ -157,6 +203,7 @@ fn main() {
             send_message,
             apply_patch_command,
             search_files,
+            run_codex,
             load_settings,
             save_settings
         ])
