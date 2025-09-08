@@ -1,5 +1,8 @@
 import { invoke } from "@tauri-apps/api/tauri";
 import { SettingsPanel } from "./settings_panel.js";
+import { MainLayout } from "./src/main_layout.js";
+
+new MainLayout();
 
 let conversationId = null;
 
