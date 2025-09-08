@@ -1,4 +1,12 @@
-import { readDir, readTextFile, writeFile, createDir } from "@tauri-apps/api/fs";
+import {
+  readDir,
+  readTextFile,
+  writeFile,
+  createDir,
+  renameFile,
+  removeFile,
+  removeDir,
+} from "@tauri-apps/api/fs";
 
 export class FileTree {
   constructor(container, root = ".") {
@@ -13,6 +21,8 @@ export class FileTree {
       e.preventDefault();
       this.#showMenu(e, this.rootEntry);
     });
+    this.container.addEventListener("dragover", (e) => e.preventDefault());
+    this.container.addEventListener("drop", (e) => this.#drop(e, this.rootEntry));
     window.addEventListener("click", () => this.#hideMenu());
     this.refresh();
   }
@@ -31,6 +41,8 @@ export class FileTree {
       const li = document.createElement("li");
       li.textContent = entry.name;
       li.dataset.path = entry.path;
+      li.dataset.dir = entry.children ? "true" : "false";
+      li.draggable = true;
       li.addEventListener("click", (e) => {
         e.stopPropagation();
         this.#select(li);
@@ -39,6 +51,11 @@ export class FileTree {
         e.preventDefault();
         this.#showMenu(e, entry);
       });
+      li.addEventListener("dragstart", (e) => {
+        e.dataTransfer.setData("text/plain", entry.path);
+      });
+      li.addEventListener("dragover", (e) => e.preventDefault());
+      li.addEventListener("drop", (e) => this.#drop(e, entry));
       parent.appendChild(li);
       if (entry.children) {
         const child = document.createElement("ul");
@@ -48,12 +65,21 @@ export class FileTree {
     }
   }
 
-  #select(li) {
+  async #select(li) {
     if (this.selected) this.selected.classList.remove("selected");
     this.selected = li;
     li.classList.add("selected");
+    if (li.dataset.dir === "true") {
+      window.dispatchEvent(
+        new CustomEvent("file-selected", { detail: { path: li.dataset.path } })
+      );
+      return;
+    }
+    const content = await readTextFile(li.dataset.path);
     window.dispatchEvent(
-      new CustomEvent("file-selected", { detail: { path: li.dataset.path } })
+      new CustomEvent("file-open", {
+        detail: { path: li.dataset.path, content },
+      })
     );
   }
 
@@ -75,7 +101,13 @@ export class FileTree {
     const newFolder = document.createElement("div");
     newFolder.textContent = "New Folder";
     newFolder.addEventListener("click", () => this.#newFolder());
-    menu.append(open, refresh, newFile, newFolder);
+    const rename = document.createElement("div");
+    rename.textContent = "Rename";
+    rename.addEventListener("click", () => this.#rename());
+    const del = document.createElement("div");
+    del.textContent = "Delete";
+    del.addEventListener("click", () => this.#delete());
+    menu.append(open, refresh, newFile, newFolder, rename, del);
     return menu;
   }
 
@@ -89,6 +121,20 @@ export class FileTree {
   #hideMenu() {
     this.menu.style.display = "none";
     this.contextEntry = null;
+  }
+
+  async #drop(e, entry) {
+    e.preventDefault();
+    const src = e.dataTransfer.getData("text/plain");
+    if (!src) return;
+    const name = src.split("/").pop();
+    const targetDir = entry.children
+      ? entry.path
+      : entry.path.split("/").slice(0, -1).join("/");
+    const dest = `${targetDir}/${name}`;
+    if (dest === src) return;
+    await renameFile(src, dest);
+    await this.refresh();
   }
 
   async #open() {
@@ -122,6 +168,32 @@ export class FileTree {
       ? this.contextEntry.path
       : this.contextEntry.path.split("/").slice(0, -1).join("/");
     await createDir(`${base}/${name}`, { recursive: true });
+    await this.refresh();
+    this.#hideMenu();
+  }
+
+  async #rename() {
+    if (!this.contextEntry) return;
+    const current =
+      this.contextEntry.name || this.contextEntry.path.split("/").pop();
+    const name = prompt("New name?", current);
+    if (!name) return this.#hideMenu();
+    const base = this.contextEntry.path.split("/").slice(0, -1).join("/");
+    await renameFile(this.contextEntry.path, `${base}/${name}`);
+    await this.refresh();
+    this.#hideMenu();
+  }
+
+  async #delete() {
+    if (!this.contextEntry) return;
+    if (!confirm(`Delete ${this.contextEntry.path}?`)) {
+      return this.#hideMenu();
+    }
+    if (this.contextEntry.children) {
+      await removeDir(this.contextEntry.path, { recursive: true });
+    } else {
+      await removeFile(this.contextEntry.path);
+    }
     await this.refresh();
     this.#hideMenu();
   }
