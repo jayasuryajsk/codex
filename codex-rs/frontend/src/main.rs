@@ -14,6 +14,7 @@ use codex_core::conversation_manager::ConversationManager;
 use codex_core::conversation_manager::NewConversation;
 use codex_core::protocol::{AgentMessageDeltaEvent, AgentMessageEvent, EventMsg};
 use codex_file_search::run as search_run;
+use codex_login::login_with_api_key;
 use codex_protocol::mcp_protocol::AuthMode;
 use codex_protocol::protocol::InputItem;
 use codex_protocol::protocol::Op;
@@ -88,7 +89,7 @@ async fn run_codex(
     state: State<'_, AppState>,
     input: String,
     context: Option<String>,
-) -> Result<(), String> {
+) -> Result<CommandStatus, String> {
     let config =
         Config::load_with_cli_overrides(vec![], default_overrides()).map_err(|e| e.to_string())?;
     let NewConversation { conversation, .. } = state
@@ -124,24 +125,59 @@ async fn run_codex(
             _ => {}
         }
     }
-    Ok(())
+    Ok(CommandStatus { code: 0 })
 }
 
 #[tauri::command]
-async fn apply_patch_command(patch: String) -> Result<(), String> {
+async fn apply_patch_command(
+    window: tauri::Window,
+    patch: String,
+) -> Result<CommandStatus, String> {
     let mut out = Vec::new();
     let mut err = Vec::new();
-    codex_apply_patch::apply_patch(&patch, &mut out, &mut err).map_err(|e| e.to_string())?;
-    Ok(())
+    let code = match codex_apply_patch::apply_patch(&patch, &mut out, &mut err) {
+        Ok(_) => 0,
+        Err(e) => {
+            err.extend_from_slice(e.to_string().as_bytes());
+            1
+        }
+    };
+    if !out.is_empty() {
+        window
+            .emit("stdout", String::from_utf8_lossy(&out).to_string())
+            .map_err(|e| e.to_string())?;
+    }
+    if !err.is_empty() {
+        window
+            .emit("stderr", String::from_utf8_lossy(&err).to_string())
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(CommandStatus { code })
 }
 
 #[derive(Serialize)]
-struct FileSearchResponse {
+struct CommandStatus {
+    code: i32,
+}
+
+#[derive(Serialize)]
+struct SearchFilesResult {
     paths: Vec<String>,
+    code: i32,
+}
+
+#[derive(Serialize)]
+struct LoginResult {
+    token: Option<String>,
+    code: i32,
 }
 
 #[tauri::command]
-async fn search_files(query: String, dir: String) -> Result<FileSearchResponse, String> {
+async fn search_files(
+    window: tauri::Window,
+    query: String,
+    dir: String,
+) -> Result<SearchFilesResult, String> {
     let cancel = Arc::new(AtomicBool::new(false));
     let results = search_run(
         &query,
@@ -153,8 +189,52 @@ async fn search_files(query: String, dir: String) -> Result<FileSearchResponse, 
         false,
     )
     .map_err(|e| e.to_string())?;
-    Ok(FileSearchResponse {
+
+    for m in &results.matches {
+        window.emit("stdout", &m.path).map_err(|e| e.to_string())?;
+    }
+
+    Ok(SearchFilesResult {
         paths: results.matches.into_iter().map(|m| m.path).collect(),
+        code: 0,
+    })
+}
+
+#[tauri::command]
+async fn login_with_api_key(window: tauri::Window, api_key: String) -> Result<LoginResult, String> {
+    let codex_home = find_codex_home().map_err(|e| e.to_string())?;
+    let code = match login_with_api_key(&codex_home, &api_key) {
+        Ok(_) => {
+            window
+                .emit("stdout", "Successfully logged in")
+                .map_err(|e| e.to_string())?;
+            0
+        }
+        Err(e) => {
+            window
+                .emit("stderr", e.to_string())
+                .map_err(|e| e.to_string())?;
+            1
+        }
+    };
+    Ok(LoginResult {
+        token: Some(api_key),
+        code,
+    })
+}
+
+#[tauri::command]
+async fn login_with_credentials(
+    window: tauri::Window,
+    _username: String,
+    _password: String,
+) -> Result<LoginResult, String> {
+    window
+        .emit("stderr", "login_with_credentials is not implemented")
+        .map_err(|e| e.to_string())?;
+    Ok(LoginResult {
+        token: None,
+        code: 1,
     })
 }
 
@@ -205,7 +285,9 @@ fn main() {
             search_files,
             run_codex,
             load_settings,
-            save_settings
+            save_settings,
+            login_with_api_key,
+            login_with_credentials
         ])
         .run(tauri::generate_context!())
         .expect("error while running Codex frontend");
