@@ -6,6 +6,7 @@ import { ChatPanel } from "./src/components/ChatPanel.js";
 import { AuthModal } from "./src/components/AuthModal.js";
 import { CommandPalette } from "./src/components/CommandPalette.tsx";
 import { writeFile } from "@tauri-apps/api/fs";
+import { TerminalPanel } from "./src/components/TerminalPanel.tsx";
 import {
   workspace,
   saveWorkspace,
@@ -18,6 +19,7 @@ const fileTree = new FileTree(document.getElementById("file-tree"));
 new ChatPanel(document.getElementById("chat"));
 
 const palette = new CommandPalette(".");
+new TerminalPanel();
 
 window.addEventListener("file-open", (e) => {
   const { path, content } = e.detail;
