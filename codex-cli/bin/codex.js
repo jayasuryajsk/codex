@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Unified entry point for the Codex CLI.
+// Unified entry point for Codex. Launches the GUI by default and falls back to
+// the CLI when flags are provided or the `--cli` flag is used.
 
 import path from "path";
 import { fileURLToPath } from "url";
@@ -57,7 +58,19 @@ if (!targetTriple) {
   throw new Error(`Unsupported platform: ${platform} (${arch})`);
 }
 
-const binaryPath = path.join(__dirname, "..", "bin", `codex-${targetTriple}`);
+const binDir = path.join(__dirname, "..", "bin");
+
+const args = process.argv.slice(2);
+const cliFlagIndex = args.indexOf("--cli");
+const useCli = cliFlagIndex !== -1 || args.length > 0;
+if (cliFlagIndex !== -1) {
+  args.splice(cliFlagIndex, 1);
+}
+
+const binaryPath = path.join(
+  binDir,
+  `${useCli ? "codex" : "codex-frontend"}-${targetTriple}`,
+);
 
 // Use an asynchronous spawn instead of spawnSync so that Node is able to
 // respond to signals (e.g. Ctrl-C / SIGINT) while the native binary is
@@ -100,7 +113,7 @@ if (rgDir) {
 }
 const updatedPath = getUpdatedPath(additionalDirs);
 
-const child = spawn(binaryPath, process.argv.slice(2), {
+const child = spawn(binaryPath, args, {
   stdio: "inherit",
   env: { ...process.env, PATH: updatedPath, CODEX_MANAGED_BY_NPM: "1" },
 });

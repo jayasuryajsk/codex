@@ -12,6 +12,11 @@
 
 The GitHub Release also contains a [DotSlash](https://dotslash-cli.com/) file for the Codex CLI named `codex`. Using a DotSlash file makes it possible to make a lightweight commit to source control to ensure all contributors use the same version of an executable, regardless of what platform they use for development.
 
+### Launch modes
+
+Running `codex` without arguments opens the graphical interface. Use `--cli` or any
+other CLI flags to run the terminal version for headless usage.
+
 ### Build from source
 
 ```bash
@@ -37,4 +42,4 @@ cargo clippy --tests
 
 # Run the tests.
 cargo test
-``` 
+```
